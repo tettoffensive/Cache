@@ -1,6 +1,8 @@
 import Foundation
 
 public class TransformerFactory {
+  #if os(Linux)
+  #else
   public static func forData() -> Transformer<Data> {
     let toData: (Data) throws -> Data = { $0 }
 
@@ -20,6 +22,7 @@ public class TransformerFactory {
 
     return Transformer<Image>(toData: toData, fromData: fromData)
   }
+  #endif
 
   public static func forCodable<U: Codable>(ofType: U.Type) -> Transformer<U> {
     let toData: (U) throws -> Data = { object in
