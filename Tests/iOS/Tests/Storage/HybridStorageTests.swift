@@ -34,7 +34,7 @@ final class HybridStorageTests: XCTestCase {
     }
 
     try then("it is set to disk too") {
-      let diskObject = try storage.diskStorage.object(forKey: key)
+      let diskObject = try storage.diskStorage?.object(forKey: key)
       XCTAssertNotNil(diskObject)
     }
   }
@@ -51,7 +51,7 @@ final class HybridStorageTests: XCTestCase {
   /// Should resolve from disk and set in-memory cache if object not in-memory
   func testObjectCopyToMemory() throws {
     try when("set to disk only") {
-      try storage.diskStorage.setObject(testObject, forKey: key)
+      try storage.diskStorage?.setObject(testObject, forKey: key)
       let cachedObject: User = try storage.object(forKey: key)
       XCTAssertEqual(cachedObject, testObject)
     }
@@ -65,7 +65,7 @@ final class HybridStorageTests: XCTestCase {
   func testEntityExpiryForObjectCopyToMemory() throws {
     let date = Date().addingTimeInterval(3)
     try when("set to disk only") {
-      try storage.diskStorage.setObject(testObject, forKey: key, expiry: .seconds(3))
+      try storage.diskStorage?.setObject(testObject, forKey: key, expiry: .seconds(3))
       let entry = try storage.entry(forKey: key)
       //accuracy for slow disk processes
       XCTAssertEqual(entry.expiry.date.timeIntervalSinceReferenceDate,
@@ -101,7 +101,7 @@ final class HybridStorageTests: XCTestCase {
     }
 
     then("there is no object on disk") {
-      let diskObject = try? storage.diskStorage.object(forKey: key)
+      let diskObject = try? storage.diskStorage!.object(forKey: key)
       XCTAssertNil(diskObject)
     }
   }
@@ -120,7 +120,7 @@ final class HybridStorageTests: XCTestCase {
     }
 
     then("there is no object on disk") {
-      let diskObject = try? storage.diskStorage.object(forKey: key)
+      let diskObject = try? storage.diskStorage!.object(forKey: key)
       XCTAssertNil(diskObject)
     }
   }
@@ -130,7 +130,7 @@ final class HybridStorageTests: XCTestCase {
     try storage.removeAll()
 
     then("the disk directory is empty") {
-      let contents = try? fileManager.contentsOfDirectory(atPath: storage.diskStorage.path)
+      let contents = try? fileManager.contentsOfDirectory(atPath: storage.diskStorage!.path)
       XCTAssertEqual(contents?.count, 0)
     }
   }

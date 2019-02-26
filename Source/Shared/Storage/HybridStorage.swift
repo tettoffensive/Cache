@@ -3,23 +3,23 @@ import Foundation
 /// Use both memory and disk storage. Try on memory first.
 public final class HybridStorage<T> {
   public let memoryStorage: MemoryStorage<T>
-  public let diskStorage: DiskStorage<T>
+  public let diskStorage: DiskStorage<T>?
 
   private(set) var storageObservations = [UUID: (HybridStorage, StorageChange) -> Void]()
   private(set) var keyObservations = [String: (HybridStorage, KeyChange<T>) -> Void]()
 
-  public init(memoryStorage: MemoryStorage<T>, diskStorage: DiskStorage<T>) {
+  public init(memoryStorage: MemoryStorage<T>, diskStorage: DiskStorage<T>? = nil) {
     self.memoryStorage = memoryStorage
     self.diskStorage = diskStorage
 
-    diskStorage.onRemove = { [weak self] path in
+    diskStorage?.onRemove = { [weak self] path in
       self?.handleRemovedObject(at: path)
     }
   }
 
   private func handleRemovedObject(at path: String) {
     notifyObserver(about: .remove) { key in
-      let fileName = diskStorage.makeFileName(for: key)
+      guard let fileName = diskStorage?.makeFileName(for: key) else { return false }
       return path.contains(fileName)
     }
   }
@@ -30,7 +30,9 @@ extension HybridStorage: StorageAware {
     do {
       return try memoryStorage.entry(forKey: key)
     } catch {
-      let entry = try diskStorage.entry(forKey: key)
+      guard let entry = try diskStorage?.entry(forKey: key) else {
+        throw StorageError.notFound
+      }
       // set back to memoryStorage
       memoryStorage.setObject(entry.object, forKey: key, expiry: entry.expiry)
       return entry
@@ -39,7 +41,7 @@ extension HybridStorage: StorageAware {
 
   public func removeObject(forKey key: String) throws {
     memoryStorage.removeObject(forKey: key)
-    try diskStorage.removeObject(forKey: key)
+    try diskStorage?.removeObject(forKey: key)
 
     notifyStorageObservers(about: .remove(key: key))
   }
@@ -52,7 +54,7 @@ extension HybridStorage: StorageAware {
     }
 
     memoryStorage.setObject(object, forKey: key, expiry: expiry)
-    try diskStorage.setObject(object, forKey: key, expiry: expiry)
+    try diskStorage?.setObject(object, forKey: key, expiry: expiry)
 
     if let change = keyChange {
       notifyObserver(forKey: key, about: change)
@@ -63,7 +65,7 @@ extension HybridStorage: StorageAware {
 
   public func removeAll() throws {
     memoryStorage.removeAll()
-    try diskStorage.removeAll()
+    try diskStorage?.removeAll()
 
     notifyStorageObservers(about: .removeAll)
     notifyKeyObservers(about: .remove)
@@ -71,7 +73,7 @@ extension HybridStorage: StorageAware {
 
   public func removeExpiredObjects() throws {
     memoryStorage.removeExpiredObjects()
-    try diskStorage.removeExpiredObjects()
+    try diskStorage?.removeExpiredObjects()
 
     notifyStorageObservers(about: .removeExpired)
   }
@@ -81,7 +83,7 @@ public extension HybridStorage {
   func transform<U>(transformer: Transformer<U>) -> HybridStorage<U> {
     let storage = HybridStorage<U>(
       memoryStorage: memoryStorage.transform(),
-      diskStorage: diskStorage.transform(transformer: transformer)
+      diskStorage: diskStorage?.transform(transformer: transformer)
     )
 
     return storage

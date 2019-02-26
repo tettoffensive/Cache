@@ -196,8 +196,8 @@ final class StorageSupportTests: XCTestCase {
     try intStorage.setObject(1, forKey: key)
     try stringStorage.setObject("hello world", forKey: key)
 
-    let intValue = try? intStorage.diskStorage.object(forKey: key)
-    let stringValue = try? stringStorage.diskStorage.object(forKey: key)
+    let intValue = try? intStorage.diskStorage!.object(forKey: key)
+    let stringValue = try? stringStorage.diskStorage!.object(forKey: key)
 
     XCTAssertNil(intValue)
     XCTAssertNotNil(stringValue)
