@@ -1,3 +1,4 @@
+#if os(iOS) || os(tvOS)
 import UIKit
 
 /// Helper UIImage extension.
@@ -33,3 +34,4 @@ extension UIImage {
     #endif
   }
 }
+#endif
